@@ -449,6 +449,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "clack-common"
+version = "0.1.0"
+source = "git+https://github.com/prokopyl/clack#279c701a7effe05eb4ad8418acdcc5408edb29b5"
+dependencies = [
+ "bitflags",
+ "clap-sys",
+]
+
+[[package]]
+name = "clack-host"
+version = "0.1.0"
+source = "git+https://github.com/prokopyl/clack#279c701a7effe05eb4ad8418acdcc5408edb29b5"
+dependencies = [
+ "clack-common",
+ "clap-sys",
+ "libloading",
+ "selfie",
+ "stable_deref_trait",
+]
+
+[[package]]
+name = "clap-sys"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "27f4e06657d33d5d194db1155cef359c359483a4170362bf4e105146dd0109e3"
+
+[[package]]
 name = "clipboard-win"
 version = "4.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -696,6 +723,7 @@ dependencies = [
 name = "eframe_template"
 version = "0.1.0"
 dependencies = [
+ "clack-host",
  "console_error_panic_hook",
  "eframe",
  "egui",
@@ -1699,6 +1727,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "selfie"
+version = "0.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a190b42f71800894d18c2f9aa867f587b6659ea78570ac8f5ae97505d054d2c0"
+dependencies = [
+ "stable_deref_trait",
+]
+
+[[package]]
 name = "serde"
 version = "1.0.152"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1823,6 +1860,12 @@ dependencies = [
  "libc",
  "winapi",
 ]
+
+[[package]]
+name = "stable_deref_trait"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 
 [[package]]
 name = "static_assertions"
