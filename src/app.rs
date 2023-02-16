@@ -71,7 +71,10 @@ impl eframe::App for TemplateApp {
 
         egui::CentralPanel::default().show(ctx, |ui| {
             if ui.button("+").clicked() {
-                if let Some(path) = rfd::FileDialog::new().pick_file() {
+                if let Some(path) = rfd::FileDialog::new()
+                    .add_filter("CLAP bundle/plugin", &["clap"])
+                    .pick_file()
+                {
                     self.plugins.push(path.display().to_string());
                 }
             }
