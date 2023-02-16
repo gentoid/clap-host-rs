@@ -8,6 +8,9 @@ pub struct TemplateApp {
     // this how you opt-out of serialization of a member
     #[serde(skip)]
     value: f32,
+
+    plugins: Vec<String>,
+    plugins_to_remove: Vec<usize>,
 }
 
 impl Default for TemplateApp {
@@ -16,6 +19,8 @@ impl Default for TemplateApp {
             // Example stuff:
             label: "Hello World!".to_owned(),
             value: 2.7,
+            plugins: vec![],
+            plugins_to_remove: vec![],
         }
     }
 }
@@ -45,7 +50,7 @@ impl eframe::App for TemplateApp {
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        let Self { label, value } = self;
+        // let Self { label, value } = self;
 
         // Examples of how to create different panels and windows.
         // Pick whichever suits you.
@@ -64,53 +69,39 @@ impl eframe::App for TemplateApp {
             });
         });
 
-        egui::SidePanel::left("side_panel").show(ctx, |ui| {
-            ui.heading("Side Panel");
-
-            ui.horizontal(|ui| {
-                ui.label("Write something: ");
-                ui.text_edit_singleline(label);
-            });
-
-            ui.add(egui::Slider::new(value, 0.0..=10.0).text("value"));
-            if ui.button("Increment").clicked() {
-                *value += 1.0;
+        egui::CentralPanel::default().show(ctx, |ui| {
+            if ui.button("+").clicked() {
+                if let Some(path) = rfd::FileDialog::new().pick_file() {
+                    self.plugins.push(path.display().to_string());
+                }
             }
 
-            ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
-                ui.horizontal(|ui| {
-                    ui.spacing_mut().item_spacing.x = 0.0;
-                    ui.label("powered by ");
-                    ui.hyperlink_to("egui", "https://github.com/emilk/egui");
-                    ui.label(" and ");
-                    ui.hyperlink_to(
-                        "eframe",
-                        "https://github.com/emilk/egui/tree/master/crates/eframe",
-                    );
-                    ui.label(".");
-                });
-            });
+            ui.vertical(|ui| {
+                let label = if self.plugins.is_empty() {
+                    "There's no plugins yet"
+                } else {
+                    "Loaded plugins:"
+                };
+                ui.label(label);
+
+                for (index, plugin) in self.plugins.iter().enumerate() {
+                    ui.horizontal(|ui| {
+                        if ui.button("-").clicked() {
+                            self.plugins_to_remove.push(index);
+                        }
+                        ui.label(plugin);
+                    });
+                }
+
+                self.plugins_to_remove.sort();
+                self.plugins_to_remove.reverse();
+
+                for index in &self.plugins_to_remove {
+                    self.plugins.remove(*index);
+                }
+
+                self.plugins_to_remove = vec![];
+            })
         });
-
-        egui::CentralPanel::default().show(ctx, |ui| {
-            // The central panel the region left after adding TopPanel's and SidePanel's
-
-            ui.heading("eframe template");
-            ui.hyperlink("https://github.com/emilk/eframe_template");
-            ui.add(egui::github_link_file!(
-                "https://github.com/emilk/eframe_template/blob/master/",
-                "Source code."
-            ));
-            egui::warn_if_debug_build(ui);
-        });
-
-        if false {
-            egui::Window::new("Window").show(ctx, |ui| {
-                ui.label("Windows can be moved by dragging them.");
-                ui.label("They are automatically sized based on contents.");
-                ui.label("You can turn on resizing and scrolling if you like.");
-                ui.label("You would normally choose either panels OR windows.");
-            });
-        }
     }
 }
