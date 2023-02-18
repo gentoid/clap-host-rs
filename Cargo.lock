@@ -489,6 +489,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "clack-extensions"
+version = "0.1.0"
+source = "git+https://github.com/prokopyl/clack#279c701a7effe05eb4ad8418acdcc5408edb29b5"
+dependencies = [
+ "bitflags",
+ "clack-common",
+ "clack-host",
+ "clap-sys",
+]
+
+[[package]]
 name = "clack-host"
 version = "0.1.0"
 source = "git+https://github.com/prokopyl/clack#279c701a7effe05eb4ad8418acdcc5408edb29b5"
@@ -754,6 +765,7 @@ dependencies = [
 name = "eframe_template"
 version = "0.1.0"
 dependencies = [
+ "clack-extensions",
  "clack-host",
  "console_error_panic_hook",
  "eframe",

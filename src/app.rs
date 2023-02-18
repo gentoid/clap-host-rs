@@ -1,3 +1,5 @@
+use crate::{plugin_host, plugins_container::PluginsContainer};
+
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
@@ -9,8 +11,10 @@ pub struct TemplateApp {
     #[serde(skip)]
     value: f32,
 
-    plugins: Vec<String>,
+    #[serde(skip)]
     plugins_to_remove: Vec<usize>,
+    #[serde(skip)]
+    plugins_container: PluginsContainer,
 }
 
 impl Default for TemplateApp {
@@ -19,8 +23,8 @@ impl Default for TemplateApp {
             // Example stuff:
             label: "Hello World!".to_owned(),
             value: 2.7,
-            plugins: vec![],
             plugins_to_remove: vec![],
+            plugins_container: PluginsContainer::init(),
         }
     }
 }
@@ -75,24 +79,25 @@ impl eframe::App for TemplateApp {
                     .add_filter("CLAP bundle/plugin", &["clap"])
                     .pick_file()
                 {
-                    self.plugins.push(path.display().to_string());
+                    self.plugins_container.load(&path.display().to_string());
                 }
             }
 
             ui.vertical(|ui| {
-                let label = if self.plugins.is_empty() {
+                let label = if self.plugins_container.is_empty() {
                     "There's no plugins yet"
                 } else {
                     "Loaded plugins:"
                 };
                 ui.label(label);
 
-                for (index, plugin) in self.plugins.iter().enumerate() {
+                for (index, plugin_name) in self.plugins_container.plugin_names().iter().enumerate()
+                {
                     ui.horizontal(|ui| {
                         if ui.button("-").clicked() {
                             self.plugins_to_remove.push(index);
                         }
-                        ui.label(plugin);
+                        ui.label(*plugin_name);
                     });
                 }
 
@@ -100,7 +105,7 @@ impl eframe::App for TemplateApp {
                 self.plugins_to_remove.reverse();
 
                 for index in &self.plugins_to_remove {
-                    self.plugins.remove(*index);
+                    self.plugins_container.unload(*index);
                 }
 
                 self.plugins_to_remove = vec![];
