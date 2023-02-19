@@ -4,7 +4,7 @@ use crate::plugin_host::PluginHost;
 
 pub struct PluginsContainer {
     host_info: HostInfo,
-    plugins: Vec<PluginHost>,
+    pub plugins: Vec<PluginHost>,
 }
 
 impl PluginsContainer {
@@ -32,10 +32,6 @@ impl PluginsContainer {
         }
 
         self.plugins.remove(index);
-    }
-
-    pub fn plugins(&self) -> &Vec<PluginHost> {
-        &self.plugins
     }
 
     pub fn is_empty(&self) -> bool {

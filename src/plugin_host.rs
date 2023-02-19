@@ -8,7 +8,11 @@ use clack_extensions::{
     },
 };
 use clack_host::{
-    prelude::{Host, HostExtensions, HostInfo, HostShared, PluginBundle, PluginInstance},
+    events::event_types::ParamValueEvent,
+    prelude::{
+        EventBuffer, EventHeader, Host, HostExtensions, HostInfo, HostShared, InputEvents,
+        OutputEvents, PluginBundle, PluginInstance,
+    },
     utils::Cookie,
 };
 
@@ -37,8 +41,8 @@ impl<'a> HostLogImpl for PluginHostShared {
 
 pub struct PluginHost {
     plugin_instance: PluginInstance<PluginHost>,
-    name: String,
-    params: Vec<MyParamInfoData>,
+    pub name: String,
+    pub params: Vec<MyParamInfoData>,
 }
 
 impl<'a> Host<'a> for PluginHost {
@@ -106,8 +110,37 @@ impl PluginHost {
         &self.name
     }
 
-    pub fn params(&self) -> &Vec<MyParamInfoData> {
-        &self.params
+    pub fn set_value(&mut self, param_id: u32, value: f64) {
+        let event = ParamValueEvent::new(
+            EventHeader::new(0),
+            Cookie::empty(),
+            -1,
+            param_id,
+            -1,
+            -1,
+            -1,
+            value,
+        );
+        let input_buffer: [ParamValueEvent; 1] = [event];
+        let input_events = InputEvents::from_buffer(&input_buffer);
+        let mut buffer = EventBuffer::new();
+        let mut output_events = OutputEvents::from_buffer(&mut buffer);
+
+        let mut main_handle = self.plugin_instance.main_thread_plugin_data();
+        let plugin_params = self
+            .plugin_instance
+            .shared_plugin_data()
+            .get_extension::<PluginParams>()
+            .unwrap();
+
+        plugin_params.flush(&mut main_handle, &input_events, &mut output_events);
+
+        if let Some(value) = plugin_params.get_value::<PluginHost>(&mut main_handle, param_id) {
+            self.params
+                .iter_mut()
+                .find(|param| param.id == param_id)
+                .map(|param| param.value = value);
+        };
     }
 }
 
@@ -119,7 +152,7 @@ pub struct MyParamInfoData {
     pub module: String,
     pub min_value: f64,
     pub max_value: f64,
-    pub default_value: f64,
+    pub value: f64,
 }
 
 impl From<ParamInfoData<'_>> for MyParamInfoData {
@@ -132,7 +165,7 @@ impl From<ParamInfoData<'_>> for MyParamInfoData {
             module: info.module.to_owned(),
             min_value: info.min_value,
             max_value: info.max_value,
-            default_value: info.default_value,
+            value: info.default_value,
         }
     }
 }

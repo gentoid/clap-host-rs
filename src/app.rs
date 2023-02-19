@@ -94,7 +94,7 @@ impl eframe::App for TemplateApp {
                 ui.label(label);
 
                 ui.horizontal(|ui| {
-                    for (index, plugin) in self.plugins_container.plugins().iter().enumerate() {
+                    for (index, plugin) in self.plugins_container.plugins.iter_mut().enumerate() {
                         ui.horizontal(|ui| {
                             if ui.button("-").clicked() {
                                 self.plugins_to_remove.push(index);
@@ -102,24 +102,27 @@ impl eframe::App for TemplateApp {
                             ui.vertical(|ui| {
                                 ui.label(plugin.name());
 
-                                for param in plugin.params() {
+                                let mut changed_params = vec![];
+                                for param in &plugin.params {
                                     ui.horizontal(|ui| {
                                         ui.add(
                                             Slider::from_get_set(
                                                 param.min_value..=param.max_value,
-                                                |v| {
-                                                    if let Some(v) = v {
-                                                        println!("New value: {v}");
-                                                        v
-                                                    } else {
-                                                        println!("Default value");
-                                                        param.default_value
+                                                |value| {
+                                                    if let Some(value) = value {
+                                                        changed_params.push((param.id, value));
                                                     }
+
+                                                    param.value
                                                 },
                                             )
                                             .text(&param.name),
                                         );
                                     });
+                                }
+
+                                for (param_id, value) in changed_params {
+                                    plugin.set_value(param_id, value);
                                 }
                             })
                         });
