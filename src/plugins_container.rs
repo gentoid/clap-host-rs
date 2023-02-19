@@ -34,8 +34,8 @@ impl PluginsContainer {
         self.plugins.remove(index);
     }
 
-    pub fn plugin_names(&self) -> Vec<&str> {
-        self.plugins.iter().map(|plugin| plugin.name()).collect()
+    pub fn plugins(&self) -> &Vec<PluginHost> {
+        &self.plugins
     }
 
     pub fn is_empty(&self) -> bool {

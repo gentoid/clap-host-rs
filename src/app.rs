@@ -1,4 +1,4 @@
-use crate::{plugin_host, plugins_container::PluginsContainer};
+use crate::plugins_container::PluginsContainer;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -91,15 +91,22 @@ impl eframe::App for TemplateApp {
                 };
                 ui.label(label);
 
-                for (index, plugin_name) in self.plugins_container.plugin_names().iter().enumerate()
-                {
-                    ui.horizontal(|ui| {
-                        if ui.button("-").clicked() {
-                            self.plugins_to_remove.push(index);
-                        }
-                        ui.label(*plugin_name);
-                    });
-                }
+                ui.horizontal(|ui| {
+                    for (index, plugin) in self.plugins_container.plugins().iter().enumerate() {
+                        ui.horizontal(|ui| {
+                            if ui.button("-").clicked() {
+                                self.plugins_to_remove.push(index);
+                            }
+                            ui.vertical(|ui| {
+                                ui.label(plugin.name());
+
+                                for param in plugin.params() {
+                                    ui.label(&param.name);
+                                }
+                            })
+                        });
+                    }
+                });
 
                 self.plugins_to_remove.sort();
                 self.plugins_to_remove.reverse();
