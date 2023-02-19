@@ -9,9 +9,10 @@ use clack_extensions::{
 };
 use clack_host::{
     events::event_types::ParamValueEvent,
+    instance::processor::StartedPluginAudioProcessor,
     prelude::{
         EventBuffer, EventHeader, Host, HostExtensions, HostInfo, HostShared, InputEvents,
-        OutputEvents, PluginBundle, PluginInstance,
+        OutputEvents, PluginAudioConfiguration, PluginBundle, PluginInstance,
     },
     utils::Cookie,
 };
@@ -43,6 +44,7 @@ pub struct PluginHost {
     plugin_instance: PluginInstance<PluginHost>,
     pub name: String,
     pub params: Vec<MyParamInfoData>,
+    audio_processor: Option<StartedPluginAudioProcessor<PluginHost>>,
 }
 
 impl<'a> Host<'a> for PluginHost {
@@ -103,7 +105,42 @@ impl PluginHost {
                 .unwrap()
                 .to_owned(),
             params,
+            audio_processor: None,
         }
+    }
+
+    pub fn activate(&mut self, audio_configuration: PluginAudioConfiguration) {
+        if self.audio_processor.is_some() {
+            return;
+        }
+
+        let audio_processor = self
+            .plugin_instance
+            .activate(|_, _, _| (), audio_configuration)
+            .unwrap();
+
+        // Let's send the audio processor to a dedicated audio processing thread.
+        let audio_processor = std::thread::scope(|s| {
+            s.spawn(|| {
+                let audio_processor = audio_processor.start_processing().unwrap();
+                // TODO: prepare buffers here
+                audio_processor
+            })
+            .join()
+            .unwrap()
+        });
+
+        self.audio_processor = Some(audio_processor);
+    }
+
+    pub fn deactivate(&mut self) {
+        if self.audio_processor.is_none() {
+            return;
+        }
+
+        let processor = self.audio_processor.take().unwrap();
+        let processor = processor.stop_processing();
+        self.plugin_instance.deactivate(processor);
     }
 
     pub fn name(&self) -> &str {

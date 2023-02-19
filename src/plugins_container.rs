@@ -1,10 +1,11 @@
-use clack_host::prelude::HostInfo;
+use clack_host::prelude::{HostInfo, PluginAudioConfiguration};
 
 use crate::plugin_host::PluginHost;
 
 pub struct PluginsContainer {
     host_info: HostInfo,
     pub plugins: Vec<PluginHost>,
+    audio_configuration: PluginAudioConfiguration,
 }
 
 impl PluginsContainer {
@@ -18,11 +19,20 @@ impl PluginsContainer {
             )
             .unwrap(),
             plugins: vec![],
+            audio_configuration: PluginAudioConfiguration {
+                sample_rate: 48_000.0,
+                frames_count_range: 32..=32,
+            },
         }
     }
 
     pub fn load(&mut self, path: &str) {
-        let plugin_host = PluginHost::new(&self.host_info, path);
+        let mut plugin_host = PluginHost::new(&self.host_info, path);
+        let audio_configuration = PluginAudioConfiguration {
+            sample_rate: self.audio_configuration.sample_rate,
+            frames_count_range: self.audio_configuration.frames_count_range.clone(),
+        };
+        plugin_host.activate(audio_configuration);
         self.plugins.push(plugin_host);
     }
 
@@ -31,7 +41,8 @@ impl PluginsContainer {
             return;
         }
 
-        self.plugins.remove(index);
+        let mut plugin_host = self.plugins.remove(index);
+        plugin_host.deactivate();
     }
 
     pub fn is_empty(&self) -> bool {
