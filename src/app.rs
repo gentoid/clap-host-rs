@@ -1,3 +1,5 @@
+use egui::Slider;
+
 use crate::plugins_container::PluginsContainer;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
@@ -101,7 +103,23 @@ impl eframe::App for TemplateApp {
                                 ui.label(plugin.name());
 
                                 for param in plugin.params() {
-                                    ui.label(&param.name);
+                                    ui.horizontal(|ui| {
+                                        ui.add(
+                                            Slider::from_get_set(
+                                                param.min_value..=param.max_value,
+                                                |v| {
+                                                    if let Some(v) = v {
+                                                        println!("New value: {v}");
+                                                        v
+                                                    } else {
+                                                        println!("Default value");
+                                                        param.default_value
+                                                    }
+                                                },
+                                            )
+                                            .text(&param.name),
+                                        );
+                                    });
                                 }
                             })
                         });
