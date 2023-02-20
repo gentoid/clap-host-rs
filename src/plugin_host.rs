@@ -47,14 +47,14 @@ pub struct PluginHost {
     audio_processor: Option<StartedPluginAudioProcessor<PluginHost>>,
 }
 
-impl<'a> Host<'a> for PluginHost {
-    type Shared = PluginHostShared;
+impl Host for PluginHost {
+    type Shared<'a> = PluginHostShared;
 
-    type MainThread = ();
+    type MainThread<'a> = ();
 
-    type AudioProcessor = ();
+    type AudioProcessor<'a> = ();
 
-    fn declare_extensions(builder: &mut HostExtensions<'_, Self>, _shared: &Self::Shared) {
+    fn declare_extensions(builder: &mut HostExtensions<'_, Self>, _shared: &Self::Shared<'_>) {
         builder.register::<HostLog>();
     }
 }
