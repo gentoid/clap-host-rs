@@ -1,3 +1,7 @@
+use cpal::{
+    traits::{DeviceTrait, HostTrait},
+    SupportedStreamConfigRange,
+};
 use egui::Slider;
 
 use crate::plugins_container::PluginsContainer;
@@ -17,6 +21,12 @@ pub struct TemplateApp {
     plugins_to_remove: Vec<usize>,
     #[serde(skip)]
     plugins_container: PluginsContainer,
+    #[serde(skip)]
+    selected_audio_device: String,
+    #[serde(skip)]
+    selected_input_config: String,
+    #[serde(skip)]
+    selected_output_config: String,
 }
 
 impl Default for TemplateApp {
@@ -27,6 +37,9 @@ impl Default for TemplateApp {
             value: 2.7,
             plugins_to_remove: vec![],
             plugins_container: PluginsContainer::init(),
+            selected_audio_device: String::new(),
+            selected_input_config: String::new(),
+            selected_output_config: String::new(),
         }
     }
 }
@@ -75,6 +88,67 @@ impl eframe::App for TemplateApp {
             });
         });
 
+        egui::SidePanel::right("settings").show(ctx, |ui| {
+            let host = cpal::default_host();
+
+            ui.vertical(|ui| {
+                egui::ComboBox::from_label("Devices")
+                    .width(350.0)
+                    .selected_text(&self.selected_audio_device)
+                    .show_ui(ui, |ui| {
+                        for device in host.devices().unwrap() {
+                            let device_name = device.name().unwrap();
+                            ui.selectable_value(
+                                &mut self.selected_audio_device,
+                                device_name.clone(),
+                                device_name,
+                            );
+                        }
+                    });
+
+                egui::ComboBox::from_label("Inputs")
+                    .width(350.0)
+                    .selected_text(&self.selected_input_config)
+                    .show_ui(ui, |ui| {
+                        if let Some(device) = host
+                            .devices()
+                            .unwrap()
+                            .find(|device| device.name().unwrap() == self.selected_audio_device)
+                        {
+                            for input_config in device.supported_input_configs().unwrap() {
+                                let formatted = format_stream_config(&input_config);
+                                ui.selectable_value(
+                                    &mut self.selected_input_config,
+                                    formatted.clone(),
+                                    formatted,
+                                );
+                            }
+                        }
+                    });
+
+                egui::ComboBox::from_label("Outputs")
+                    .width(350.0)
+                    .selected_text(&self.selected_output_config)
+                    .show_ui(ui, |ui| {
+                        if let Some(device) = host
+                            .devices()
+                            .unwrap()
+                            .find(|device| device.name().unwrap() == self.selected_audio_device)
+                        {
+                            for input_config in device.supported_output_configs().unwrap() {
+                                let formatted = format_stream_config(&input_config);
+                                ui.selectable_value(
+                                    &mut self.selected_output_config,
+                                    formatted.clone(),
+                                    formatted,
+                                );
+                            }
+                        }
+                    });
+            })
+        });
+
+        // it always MUST be the latest. See https://docs.rs/egui/latest/egui/containers/panel/struct.CentralPanel.html
         egui::CentralPanel::default().show(ctx, |ui| {
             if ui.button("+").clicked() {
                 if let Some(path) = rfd::FileDialog::new()
@@ -140,4 +214,18 @@ impl eframe::App for TemplateApp {
             })
         });
     }
+}
+
+fn format_stream_config(config: &SupportedStreamConfigRange) -> String {
+    let sample_rate = if config.min_sample_rate() == config.max_sample_rate() {
+        format!("{}", config.min_sample_rate().0)
+    } else {
+        format!(
+            "{} - {}",
+            config.min_sample_rate().0,
+            config.max_sample_rate().0
+        )
+    };
+
+    format!("{}, {sample_rate}", config.channels())
 }
