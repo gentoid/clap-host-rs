@@ -4,7 +4,7 @@ use cpal::{
 };
 use egui::Slider;
 
-use crate::plugins_container::PluginsContainer;
+use crate::{audio::Audio, plugins_container::PluginsContainer};
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -27,6 +27,8 @@ pub struct TemplateApp {
     selected_input_config: String,
     #[serde(skip)]
     selected_output_config: String,
+    #[serde(skip)]
+    audio: Audio,
 }
 
 impl Default for TemplateApp {
@@ -40,6 +42,7 @@ impl Default for TemplateApp {
             selected_audio_device: String::new(),
             selected_input_config: String::new(),
             selected_output_config: String::new(),
+            audio: Audio::init(),
         }
     }
 }
@@ -150,6 +153,10 @@ impl eframe::App for TemplateApp {
 
         // it always MUST be the latest. See https://docs.rs/egui/latest/egui/containers/panel/struct.CentralPanel.html
         egui::CentralPanel::default().show(ctx, |ui| {
+            if ui.button("Play").clicked() {
+                self.audio.play();
+            }
+
             if ui.button("+").clicked() {
                 if let Some(path) = rfd::FileDialog::new()
                     .add_filter("CLAP bundle/plugin", &["clap"])
