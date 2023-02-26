@@ -21,6 +21,7 @@ clack-host = { git = "https://github.com/prokopyl/clack", version = "0.1.0" }
 rfd = "0.11.1"
 clack-extensions = { git = "https://github.com/prokopyl/clack", version = "0.1.0", features = ["audio-ports", "clack-host", "log", "params"] }
 cpal = "0.15.0"
+rtrb = "0.2.3"
 
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
