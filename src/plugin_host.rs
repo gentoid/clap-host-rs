@@ -9,11 +9,11 @@ use clack_extensions::{
 };
 use clack_host::{
     events::event_types::ParamValueEvent,
-    instance::processor::StartedPluginAudioProcessor,
     prelude::{
         EventBuffer, EventHeader, Host, HostExtensions, HostInfo, HostShared, InputEvents,
         OutputEvents, PluginAudioConfiguration, PluginBundle, PluginInstance,
     },
+    process::StartedPluginAudioProcessor,
     utils::Cookie,
 };
 
