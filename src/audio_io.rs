@@ -15,6 +15,7 @@ pub struct AudioIO {
     output_stream: Stream,
     io_tx: Producer<AudioIOMsg>,
     output_stream_config: StreamConfig,
+    audio_tx: Option<Producer<f32>>,
 }
 
 impl AudioIO {
@@ -68,14 +69,22 @@ impl AudioIO {
             output_stream,
             output_stream_config,
             io_tx,
+            audio_tx: None,
         }
     }
 
-    pub fn new_audio(&mut self, audio: Audio) {
+    pub fn deactivate(&mut self) {
+        self.audio_tx = None;
+        self.io_tx.push(AudioIOMsg::NoAudio).unwrap();
+    }
+
+    pub fn activate(&mut self) {
+        let (audio, audio_tx) = Audio::init(self.output_stream_config.channels);
+        self.audio_tx = Some(audio_tx);
         self.io_tx.push(AudioIOMsg::NewAudio(audio)).unwrap();
     }
 
-    pub fn drop_audio(&mut self) {
-        self.io_tx.push(AudioIOMsg::NoAudio).unwrap();
+    pub fn is_activated(&self) -> bool {
+        self.audio_tx.is_some()
     }
 }

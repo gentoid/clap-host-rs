@@ -153,9 +153,19 @@ impl eframe::App for TemplateApp {
 
         // it always MUST be the latest. See https://docs.rs/egui/latest/egui/containers/panel/struct.CentralPanel.html
         egui::CentralPanel::default().show(ctx, |ui| {
-            // if ui.button("Play").clicked() {
-            //     self.audio.play();
-            // }
+            if self.audio_io.is_activated() {
+                if ui.button("Deactivate").clicked() {
+                    self.audio_io.deactivate();
+                }
+
+                ui.label("Activated");
+            } else {
+                if ui.button("Activate").clicked() {
+                    self.audio_io.activate();
+                }
+
+                ui.label("Deactivated");
+            }
 
             if ui.button("+").clicked() {
                 if let Some(path) = rfd::FileDialog::new()
