@@ -1,24 +1,29 @@
 use cpal::{
     traits::{DeviceTrait, HostTrait, StreamTrait},
-    Stream,
+    Stream, StreamConfig,
 };
+
+use crate::plugin_host::PluginHost;
 
 pub struct Audio {
     output_stream: Option<Stream>,
+    output_stream_config: StreamConfig,
 }
 
 impl Audio {
     pub fn init() -> Self {
         let host = cpal::default_host();
         let output_device = host.default_output_device().unwrap();
-        let output_config = output_device
+        let output_stream_config = output_device
             .supported_output_configs()
             .unwrap()
             .next()
             .unwrap()
-            .with_max_sample_rate();
+            .with_max_sample_rate()
+            .into();
+
         let stream = output_device.build_output_stream(
-            &output_config.into(),
+            &output_stream_config,
             move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
                 println!("OUTPUT DATA LENGTH: {}", data.len());
             },
@@ -36,7 +41,10 @@ impl Audio {
             }
         };
 
-        Self { output_stream }
+        Self {
+            output_stream,
+            output_stream_config,
+        }
     }
 
     pub fn play(&mut self) {
