@@ -2,6 +2,7 @@
 
 mod app;
 mod audio;
+mod audio_io;
 mod plugin_host;
 mod plugins_container;
 pub use app::TemplateApp;

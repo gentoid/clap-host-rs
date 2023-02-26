@@ -1,61 +1,34 @@
-use cpal::{
-    traits::{DeviceTrait, HostTrait, StreamTrait},
-    Stream, StreamConfig,
-};
-
-use crate::plugin_host::PluginHost;
+use cpal::ChannelCount;
+use rtrb::{Consumer, Producer, RingBuffer};
 
 pub struct Audio {
-    output_stream: Option<Stream>,
-    output_stream_config: StreamConfig,
+    rb_rx: Consumer<f32>,
 }
 
 impl Audio {
-    pub fn init() -> Self {
-        let host = cpal::default_host();
-        let output_device = host.default_output_device().unwrap();
-        let output_stream_config = output_device
-            .supported_output_configs()
-            .unwrap()
-            .next()
-            .unwrap()
-            .with_max_sample_rate()
-            .into();
+    pub fn init(channels: ChannelCount) -> (Self, Producer<f32>) {
+        let (rb_tx, rb_rx) = RingBuffer::new(channels as usize * 44100);
 
-        let stream = output_device.build_output_stream(
-            &output_stream_config,
-            move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
-                println!("OUTPUT DATA LENGTH: {}", data.len());
-            },
-            move |err| {
-                println!("STREAM ERROR: {:?}", err);
-            },
-            None,
-        );
-
-        let output_stream = match stream {
-            Ok(stream) => Some(stream),
-            Err(err) => {
-                println!("BUILD STREAM ERROR: {:?}", err);
-                None
-            }
-        };
-
-        Self {
-            output_stream,
-            output_stream_config,
-        }
+        (Self { rb_rx }, rb_tx)
     }
 
-    pub fn play(&mut self) {
-        if let Some(stream) = &self.output_stream {
-            match stream.play() {
-                Ok(_) => {
-                    println!("SUCCESSFULLY STARTED PLAYING");
-                }
-                Err(err) => {
-                    println!("PLAY ERROR: {:?}", err);
-                }
+    // pub fn play(&mut self) {
+    //     if let Some(stream) = &self.output_stream {
+    //         match stream.play() {
+    //             Ok(_) => {
+    //                 println!("SUCCESSFULLY STARTED PLAYING");
+    //             }
+    //             Err(err) => {
+    //                 println!("PLAY ERROR: {:?}", err);
+    //             }
+    //         }
+    //     }
+    // }
+
+    pub fn process(&mut self, output: &mut [f32]) {
+        if let Ok(chunk) = self.rb_rx.read_chunk(output.len()) {
+            for (index, value) in chunk.into_iter().enumerate() {
+                output[index] = value;
             }
         }
     }
